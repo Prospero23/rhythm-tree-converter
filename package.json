@@ -1,0 +1,14 @@
+{
+  "name": "@prospero23/rhythm-tree-parser",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ben Eidson",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "vexflow": "^5.0.0"
+  }
+}
