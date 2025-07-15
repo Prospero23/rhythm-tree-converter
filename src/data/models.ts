@@ -14,7 +14,7 @@ export type Note = {
     dots?: number;
     isTied?: boolean;
     isAccented?: boolean;
-    groupID: string | null
+    beamID: string | null
   }
 
 export type Tuplet = {
@@ -35,5 +35,5 @@ export type RhythmNode = {
     children: RhythmNode[]
     isRest: boolean
     isAccented: boolean
-    groupID: string | null
+    beamID: string | null
 }

@@ -73,9 +73,9 @@ export default class PreRenderParser {
 
         //creates tied notes if notes are larger than 1. could add logic here later to simplify to a single node etc
         if (containingSpace.numerator > 1){
-            return this.createTiedNote(nodeToConvert.id, containingSpace.numerator, noteThatGetsValue, nodeToConvert.isRest, nodeToConvert.isAccented, nodeToConvert.groupID)
+            return this.createTiedNote(nodeToConvert.id, containingSpace.numerator, noteThatGetsValue, nodeToConvert.isRest, nodeToConvert.isAccented, nodeToConvert.beamID)
         }
-        return [{id: nodeToConvert.id, kind:RhythmType.Note, duration: noteThatGetsValue, isRest: nodeToConvert.isRest, isAccented: nodeToConvert.isAccented, groupID: nodeToConvert.groupID}]
+        return [{id: nodeToConvert.id, kind:RhythmType.Note, duration: noteThatGetsValue, isRest: nodeToConvert.isRest, isAccented: nodeToConvert.isAccented, beamID: nodeToConvert.beamID}]
 
         }
         /**
@@ -108,7 +108,7 @@ export default class PreRenderParser {
                 isRest: nodeToConvert.isRest,
                 isAccented: nodeToConvert.isAccented,
                 isTied: false,
-                groupID: nodeToConvert.groupID
+                beamID: nodeToConvert.beamID
             }];
         }
         let simplified = containingSpace.numerator / containingSpace.denominator
@@ -123,7 +123,7 @@ export default class PreRenderParser {
                 noteValue,
                 nodeToConvert.isRest,
                 nodeToConvert.isAccented,
-                nodeToConvert.groupID
+                nodeToConvert.beamID
             );
         }
     
@@ -135,13 +135,13 @@ export default class PreRenderParser {
     
 
     // helper function for convertToNote TODO: fix rest stuff in this
-    private createTiedNote(id:string, size: number, durationValue: ValidDuration, isRest: boolean, isAccented: boolean, groupID: string | null): Note[]{
+    private createTiedNote(id:string, size: number, durationValue: ValidDuration, isRest: boolean, isAccented: boolean, beamID: string | null): Note[]{
         let tiedNotes: Note[] = []
 
         if (isRest){
             // make all the notes but don't need to worry about tieiinging
             for (let i = 0; i < size; i++){
-                let newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, isRest: true, groupID}
+                let newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, isRest: true, beamID}
                 tiedNotes.push(newNote) 
             }
             return tiedNotes
@@ -150,15 +150,15 @@ export default class PreRenderParser {
         for (let i = 0; i < size - 1; i++){
             // mark the first note as accented if needed
             if (i == 0 && isAccented == true){
-                let newAccentedNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, isAccented: true, groupID}
+                let newAccentedNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, isAccented: true, beamID}
                 tiedNotes.push(newAccentedNote)
             } else {
-                let newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, groupID}
+                let newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, beamID}
                 tiedNotes.push(newNote)    
             }
         }
         // add no tie on the last note
-        let lastNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, groupID}
+        let lastNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, beamID}
         tiedNotes.push(lastNote)
         return tiedNotes
 

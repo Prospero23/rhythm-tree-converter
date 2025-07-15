@@ -105,7 +105,7 @@ export default class VexflowConverter {
     if (!this.isValidDuration(duration)) {
       throw new Error(`Invalid duration: ${duration} at node ${JSON.stringify(model)}`);
     }
-    return [this.createNoteWithDuration(model.duration, model.isRest, model.isAccented, model.dots, model.id, model.groupID)];
+    return [this.createNoteWithDuration(model.duration, model.isRest, model.isAccented, model.dots, model.id, model.beamID)];
   }
 
   private renderTuplet(model: Tuplet): StemmableNote[] {
@@ -143,7 +143,7 @@ export default class VexflowConverter {
     isAccented = false,
     dots = 0,
     engineID = "",
-    groupID: string | null): StemmableNote {
+    beamID: string | null): StemmableNote {
     let durationString = this.durationToString(duration);
     
     const noteString = isRest
@@ -167,7 +167,7 @@ export default class VexflowConverter {
     this.generateNoteMaps(engineID, generatedID)
 
     // add attribute for beaming pass
-    if (groupID) note.setAttribute("groupID", groupID);
+    if (beamID) note.setAttribute("beamID", beamID);
 
     return note;
 }
@@ -315,10 +315,10 @@ export default class VexflowConverter {
   }
 
   private beamByGroup(notes: StemmableNote[]) {
-    // collect notes by their groupID
+    // collect notes by their beamID
     const groups: Record<string, StemmableNote[]> = {};
     for (const note of notes) {
-      const gid = note.getAttribute("groupID");
+      const gid = note.getAttribute("beamID");
       if (!gid) continue;
       if (!groups[gid]) groups[gid] = [];
       groups[gid].push(note);
