@@ -7,7 +7,7 @@
   },
   "author": "Ben Eidson",
   "license": "MIT",
-  "description": "",
+  "description": "converts rhythms represented as trees to a format that can be rendered by Vexflow",
   "dependencies": {
     "vexflow": "^5.0.0"
   }
