@@ -11,15 +11,16 @@ interface ConversionResult{
     treeToVex: EngineMap;
 }
 
-export function treeToVexflow(vexflowFactory: Factory, rootNode: RhythmNode, meter: Fraction): ConversionResult{
+export function treeToVexflow(vexflowFactory: Factory, rootNode: RhythmNode, meter: [number, number]): ConversionResult{
     const preConverter = new PreRenderConverter();
     const vexConverter = new VexflowConverter(vexflowFactory);
 
-    const nodes = preConverter.convertTreeToPreRender(meter, rootNode);    
+    const meterFraction = new Fraction(...meter);
+    const nodes = preConverter.convertTreeToPreRender(meterFraction, rootNode);    
     const notes = vexConverter.processNodes(nodes);
 
-    const validDenominator = preConverter.convertDenominatorToValidDuration(meter.denominator);
-    const validMeter = new Fraction(meter.numerator, validDenominator);
+    const validDenominator = preConverter.convertDenominatorToValidDuration(meterFraction.denominator);
+    const validMeter = new Fraction(meterFraction.numerator, validDenominator);
 
     const vexToTree = vexConverter.getVex2EngineMap();
     const treeToVex = vexConverter.getEngine2VexMap();
