@@ -1,12 +1,10 @@
-import { VexFlow, StemmableNote, Factory, Registry, ModifierPosition, Articulation, type Tuplet as VexTuplet} from 'vexflow';
+import { StemmableNote, Factory, Registry, ModifierPosition, Articulation, type Tuplet as VexTuplet} from 'vexflow';
 import {RhythmType, type PreRenderModel, type Note, type Tuplet} from '../data/models';
 import isValidToBeam from '../helpers/isValidToBeam';
 
-const { Glyphs } = VexFlow;
-
 const MIDDLE_NOTE = "B/4";
 
-// for tie stuff
+// Used in tie calculations.
 export type EngineMap = Record<string, string[]>
 export type RenderMap = Record<string, string>
 
@@ -40,18 +38,18 @@ export default class VexflowConverter {
   processNodes(nodes: PreRenderModel[]): StemmableNote[] {
     const result: StemmableNote[] = [];
 
-    // First pass: Render and register all notes
+    // Render and register all notes.
     for (const node of nodes) {
       const renderedNotes = this.proccessNode(node); // Render and register
       result.push(...renderedNotes);
     }
 
-    // generate ties in some capacity here
+    // Generate ties.
     for (const engineID in this.engineToRenderNotes){
       this.generateTies(engineID)
     }
 
-    // beam
+    // Generate beams.
     this.beamByGroup(result)
 
     return result
@@ -71,20 +69,15 @@ export default class VexflowConverter {
       }
     });
   
-    // If there are any engineIDs that exist only in the ties map, add those as well. NOT NEEDED BUT MAYBE IN FUTURE
-    // Object.keys(this.engineToRenderTies).forEach(engineID => {
-    //   if (!combinedMap[engineID]) {
-    //     combinedMap[engineID] = [...this.engineToRenderTies[engineID]];
-    //   }
-    // });
+    // TODO: If there are any engineIDs that exist only in the ties map, add those as well.
+    // NOTE: not needed for now. Maybe in the future.
   
     return combinedMap;
   }
   
   getVex2EngineMap(): RenderMap {
     // TODO: make combined map actually work when clicking ties but for now whatever
-    const combinedMap: RenderMap = {...this.renderNotesToEngine, ...this.renderTiesToEngine};
-    
+    const combinedMap: RenderMap = {...this.renderNotesToEngine, ...this.renderTiesToEngine}; 
     
     return combinedMap
   }
@@ -109,16 +102,13 @@ export default class VexflowConverter {
 
   private renderTuplet(model: Tuplet): StemmableNote[] {
     const childNotes: StemmableNote[] = this.processNodes(model.children);
-   // let childDuration = childNotes[0].getDuration();
 
     let tuplet: VexTuplet;
     if (this.settings.hasSuffix){
       if (!model.suffix){
         throw new Error("Tuplet does not have initialized suffix")
       }
-      // const suffixString = this.durationToString(model.suffix)
-      // const suffix = this.durationStringToGlyph(suffixString);
-      // need at least vexflow 5.1.0 to add suffix to tuplets
+      // TODO: add suffix to tuplets. Must wait for at least vexflow 5.1.0.
       tuplet = this.factory.Tuplet({notes: childNotes, options: {numNotes: model.numNotes, notesOccupied: model.notesOccupied, ratioed: true, bracketed: true}})
     } else { 
       tuplet = this.factory.Tuplet({notes: childNotes, options: {numNotes: model.numNotes, notesOccupied: model.notesOccupied, ratioed: true}}) 
@@ -196,31 +186,6 @@ export default class VexflowConverter {
     }
   }
 
-  private durationStringToGlyph(durationString: string) {
-        switch (durationString) {
-      case 'w':
-        return Glyphs.metNoteWhole; // Whole note
-      case 'h':
-        return Glyphs.metNoteHalfUp; // Half note
-      case 'q':
-        return Glyphs.metNoteQuarterUp; // Quarter note
-      case '8':
-        return Glyphs.metNote8thUp; // Eighth note
-      case '16':
-        return Glyphs.metNote16thUp; // Sixteenth note
-      case '32':
-        return Glyphs.metNote32ndUp; // Thirty-second note
-      case '64':
-        return Glyphs.metNote64thUp; // Sixty-fourth note
-      case '128':
-        return Glyphs.metNote128thUp; // One hundred twenty-eighth note
-      case '256':
-        return Glyphs.metNote256thUp; // Two hundred fifty-sixth note
-      default:
-        throw new Error(`Unsupported duration string: ${durationString}`);
-    }
-  }
-
   /**
    * helper function for dealing with creating note maps for use in touch detection
    * @param engineID 
@@ -282,7 +247,7 @@ export default class VexflowConverter {
 
       if(currentElement && nextElement){
 
-          // Check if either note is a rest and skip tie creation if so.
+    // Check if either note is a rest and skip tie creation if so.
     if (typeof currentElement.isRest === "function" && currentElement.isRest()) {
       continue;
     }
@@ -294,13 +259,6 @@ export default class VexflowConverter {
       tieSet.add(tie.getAttribute("id"))
       }
     }
-
-    // // add new note children to the map
-    // let newNoteChildren = [...noteSet]
-    // if (newNoteChildren.length == 0){
-    //   return
-    // }
-    // this.engineToRenderNotes[engineID] = newNoteChildren
 
     // add new tie children to map
     const newTieChildren = [...tieSet]
@@ -314,7 +272,7 @@ export default class VexflowConverter {
   }
 
   private beamByGroup(notes: StemmableNote[]) {
-    // collect notes by their beamID
+    // Collect notes by their beamID.
     const groups: Record<string, StemmableNote[]> = {};
     for (const note of notes) {
       const gid = note.getAttribute("beamID");
@@ -323,7 +281,7 @@ export default class VexflowConverter {
       groups[gid].push(note);
     }
 
-    // for each group with ≥2 notes, create & draw a beam
+    // For each group with >= 2 notes, create & draw a beam.
     for (const gid in groups) {
       const groupNotes = groups[gid];
       if (groupNotes.length < 2) continue;

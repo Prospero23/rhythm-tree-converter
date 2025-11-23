@@ -78,61 +78,7 @@ export default class PreRenderConverter {
         return [{id: nodeToConvert.id, kind:RhythmType.Note, duration: noteThatGetsValue, isRest: nodeToConvert.isRest, isAccented: nodeToConvert.isAccented, beamID: nodeToConvert.beamID}]
 
         }
-        /**
- * 
- * @param nodeToConvert Node that has no children
- * @param containingSpace Same as in convertNode. Functions as length. numerator: how many of 1/denom.
- * @returns 
- */
-    private convertEmptyRootNode(nodeToConvert: RhythmNode, containingSpace: Fraction): PreRenderModel[] {
-        if (nodeToConvert.children.length > 0) {
-            throw new Error("Root node has children. convertEmptyRootNode should not have been called.");
-        }
     
-        const noteValue = containingSpace.denominator;
-    
-        if (containingSpace.numerator % 1 !== 0) {
-            throw new Error("Handling for fractional subdivisions is not implemented yet.");
-        }
-    
-        if (!this.isValidDuration(noteValue)) {
-            throw new Error(`Invalid note duration 1/${noteValue} for node ${nodeToConvert.id}`);
-        }
-    
-        // Case 1: Single note, no ties needed.
-        if (containingSpace.numerator === 1) {
-            return [{
-                id: nodeToConvert.id,
-                kind: RhythmType.Note,
-                duration: noteValue,
-                isRest: nodeToConvert.isRest,
-                isAccented: nodeToConvert.isAccented,
-                isTied: false,
-                beamID: nodeToConvert.beamID
-            }];
-        }
-        // const simplified = containingSpace.numerator / containingSpace.denominator
-        // if simplified idk
-    
-        // Case 2: Multiple notes but within tie limit.
-        if (containingSpace.numerator <= MAX_TIED) {
-            return this.createTiedNote(
-                nodeToConvert.id,
-                containingSpace.numerator,
-                noteValue,
-                nodeToConvert.isRest,
-                nodeToConvert.isAccented,
-                nodeToConvert.beamID
-            );
-        }
-    
-        // Case 3: Exceeds the max tied limit - handle with a tuplet.
-        // Ensure that you pass the appropriate duration (i.e., containingSpace) if needed.
-        // Optionally, you might want to flatten the tuplet result if your rendering expects notes.
-        return this.convertToTuplet(nodeToConvert, containingSpace).children as Note[];
-    }
-    
-
     // helper function for convertToNote TODO: fix rest stuff in this
     private createTiedNote(id:string, size: number, durationValue: ValidDuration, isRest: boolean, isAccented: boolean, beamID: string | null): Note[]{
         const tiedNotes: Note[] = []
@@ -190,32 +136,9 @@ export default class PreRenderConverter {
         return {id: node.id, kind: RhythmType.Tuplet, children: [...children], numNotes: numNotes, notesOccupied: notesOccupied}
     }
 
-    // post processing step to add beams to everything
-    private beamSequence(sequence: PreRenderModel[]){
-        for (const element of sequence){
-            switch (element.kind) {
-                case RhythmType.Note:
-                 // return this.renderNote(model);
-                // eslint-disable-next-line no-fallthrough
-                case RhythmType.Tuplet:
-                //  return this.renderTuplet(model);
-              }
-          
-        }
-    }
-
     private isValidDuration(duration: number): duration is ValidDuration {
         return this.validDurations.includes(duration as ValidDuration);
       }
-
-    private findClosestSmallerValidDuration(duration: number): ValidDuration{
-    const i = 0;
-
-    while (this.validDurations[i] < duration){
-        return 2
-    }
-    return 2
-    }
 
     private addSuffix(models: PreRenderModel[]) {
         for (const model of models) {
@@ -296,11 +219,6 @@ export default class PreRenderConverter {
         else {
             return 256
         }
-
-
-        //256
-
-        // 25 -> 50 all 32
     }
 }
 
