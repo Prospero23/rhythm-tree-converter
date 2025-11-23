@@ -10,5 +10,11 @@
   "description": "converts rhythms represented as trees to a format that can be rendered by Vexflow",
   "dependencies": {
     "vexflow": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0"
   }
 }

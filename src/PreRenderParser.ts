@@ -14,8 +14,8 @@ export default class PreRenderParser {
      */
     convertTreeToPreRender(meter: Fraction, rootNode: RhythmNode): PreRenderModel[]{
         // simplifies denominator down to 4, 8, 16, 32 etc
-       let adjustedDenom = this.convertDenominatorToValidDuration(meter.denominator)
-       let adjustedMeter = new Fraction(meter.numerator, adjustedDenom)
+       const adjustedDenom = this.convertDenominatorToValidDuration(meter.denominator)
+       const adjustedMeter = new Fraction(meter.numerator, adjustedDenom)
         const nodes = this.convertNode(rootNode, adjustedMeter)
         this.addSuffix(nodes);
         // this.beamSequence(nodes)
@@ -111,8 +111,7 @@ export default class PreRenderParser {
                 beamID: nodeToConvert.beamID
             }];
         }
-        let simplified = containingSpace.numerator / containingSpace.denominator
-
+        // const simplified = containingSpace.numerator / containingSpace.denominator
         // if simplified idk
     
         // Case 2: Multiple notes but within tie limit.
@@ -136,12 +135,12 @@ export default class PreRenderParser {
 
     // helper function for convertToNote TODO: fix rest stuff in this
     private createTiedNote(id:string, size: number, durationValue: ValidDuration, isRest: boolean, isAccented: boolean, beamID: string | null): Note[]{
-        let tiedNotes: Note[] = []
+        const tiedNotes: Note[] = []
 
         if (isRest){
             // make all the notes but don't need to worry about tieiinging
             for (let i = 0; i < size; i++){
-                let newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, isRest: true, beamID}
+                const newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, isRest: true, beamID}
                 tiedNotes.push(newNote) 
             }
             return tiedNotes
@@ -150,26 +149,26 @@ export default class PreRenderParser {
         for (let i = 0; i < size - 1; i++){
             // mark the first note as accented if needed
             if (i == 0 && isAccented == true){
-                let newAccentedNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, isAccented: true, beamID}
+                const newAccentedNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, isAccented: true, beamID}
                 tiedNotes.push(newAccentedNote)
             } else {
-                let newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, beamID}
+                const newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, beamID}
                 tiedNotes.push(newNote)    
             }
         }
         // add no tie on the last note
-        let lastNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, beamID}
+        const lastNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, beamID}
         tiedNotes.push(lastNote)
         return tiedNotes
 
     }
 
     private convertNodeArray(nodes: RhythmNode[], childDuration: Fraction){
-        let children: PreRenderModel[] = []
-        for (let node of nodes){ 
+        const children: PreRenderModel[] = []
+        for (const node of nodes){ 
             //duration of the node scaled by node size
-            let currentDuration = childDuration.multiply(node.size)
-            let converted = this.convertNode(node, currentDuration)
+            const currentDuration = childDuration.multiply(node.size)
+            const converted = this.convertNode(node, currentDuration)
             children.push(...converted)
         } 
         //used since convertNode returns PreRenderModel[] so at this point children is PreRenderModel[][]
@@ -182,7 +181,7 @@ export default class PreRenderParser {
         // number children
         const numNotes = getChildrenTotalSize(node.children);
 
-        let childSize: Fraction = new Fraction(1, containingSpace.denominator)
+        const childSize: Fraction = new Fraction(1, containingSpace.denominator)
         const notesOccupied = containingSpace.numerator
 
        const children = this.convertNodeArray(node.children, childSize)
@@ -193,10 +192,11 @@ export default class PreRenderParser {
 
     // post processing step to add beams to everything
     private beamSequence(sequence: PreRenderModel[]){
-        for (let element of sequence){
+        for (const element of sequence){
             switch (element.kind) {
                 case RhythmType.Note:
                  // return this.renderNote(model);
+                // eslint-disable-next-line no-fallthrough
                 case RhythmType.Tuplet:
                 //  return this.renderTuplet(model);
               }
@@ -209,7 +209,7 @@ export default class PreRenderParser {
       }
 
     private findClosestSmallerValidDuration(duration: number): ValidDuration{
-    let i = 0;
+    const i = 0;
 
     while (this.validDurations[i] < duration){
         return 2
@@ -218,7 +218,7 @@ export default class PreRenderParser {
     }
 
     private addSuffix(models: PreRenderModel[]) {
-        for (let model of models) {
+        for (const model of models) {
             if (model.kind !== RhythmType.Tuplet) continue;
 
             if (!model.children || model.children.length === 0) {
@@ -229,11 +229,11 @@ export default class PreRenderParser {
             throw new Error(`Tuplet ${model.id} has 0 notes; invalid.`);
             }
 
-            let totalDuration = new Fraction(0, 1);
+            const totalDuration = new Fraction(0, 1);
 
-            for (let child of model.children) {
+            for (const child of model.children) {
             if (child.kind === RhythmType.Note) {
-                let childFraction = new Fraction(1, child.duration);
+                const childFraction = new Fraction(1, child.duration);
                 totalDuration.add(childFraction);
             }
 
@@ -244,7 +244,7 @@ export default class PreRenderParser {
                 throw new Error(`suffix not created correctly for tuplet ${child.id}`);
                 }
                 // notes occupied is the "real" duration so needed for proper size calcs
-                let childFraction = new Fraction(child.notesOccupied, child.suffix);
+                const childFraction = new Fraction(child.notesOccupied, child.suffix);
                 totalDuration.add(childFraction);
             }
             }
@@ -304,11 +304,9 @@ export default class PreRenderParser {
     }
 }
 
-
 // for the moment just use uuid whenever making a new note
-
 function getChildrenTotalSize(children: RhythmNode[]): number{
-    let lengths = children.map((node) => node.size)
-    let sum = lengths.reduce((partialSum, a) => partialSum + a, 0)
+    const lengths = children.map((node) => node.size)
+    const sum = lengths.reduce((partialSum, a) => partialSum + a, 0)
     return sum
 }

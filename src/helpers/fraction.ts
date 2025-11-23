@@ -33,7 +33,7 @@ export default class Fraction {
      */
     divide(number: number | Fraction): Fraction{
         if (typeof number === 'number'){
-            let newDenominator = this.denominator * number
+            const newDenominator = this.denominator * number
             return new Fraction(this.numerator, newDenominator)    
         }
 
@@ -41,7 +41,7 @@ export default class Fraction {
     }
 
     multiply(number: number): Fraction{
-        let newNumerator = this.numerator * number
+        const newNumerator = this.numerator * number
         return new Fraction (newNumerator, this.denominator)
     }
 
@@ -50,7 +50,7 @@ export default class Fraction {
      * @returns result as NEW fraction
      */
     reduce(): Fraction{
-        let gcd = this.greatestCommonDenom(this.numerator, this.denominator)
+        const gcd = this.greatestCommonDenom(this.numerator, this.denominator)
         return new Fraction(this.numerator/gcd, this.denominator/gcd)
     }
 

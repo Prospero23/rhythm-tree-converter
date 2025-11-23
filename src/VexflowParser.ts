@@ -10,7 +10,7 @@ const MIDDLE_NOTE = "B/4";
 export type EngineMap = Record<string, string[]>
 export type RenderMap = Record<string, string>
 
-type VexflowConverterSettings = {
+interface VexflowConverterSettings {
   hasSuffix: boolean;
 }
 
@@ -41,14 +41,13 @@ export default class VexflowConverter {
     const result: StemmableNote[] = [];
 
     // First pass: Render and register all notes
-    for (let i = 0; i < nodes.length; i++) {
-      const currentNode = nodes[i];
-      const renderedNotes = this.proccessNode(currentNode); // Render and register
+    for (const node of nodes) {
+      const renderedNotes = this.proccessNode(node); // Render and register
       result.push(...renderedNotes);
     }
 
     // generate ties in some capacity here
-    for (let engineID in this.engineToRenderNotes){
+    for (const engineID in this.engineToRenderNotes){
       this.generateTies(engineID)
     }
 
@@ -101,7 +100,7 @@ export default class VexflowConverter {
   }
 
   private renderNote(model: Note): StemmableNote[] {
-    let duration = model.duration;
+    const duration = model.duration;
     if (!this.isValidDuration(duration)) {
       throw new Error(`Invalid duration: ${duration} at node ${JSON.stringify(model)}`);
     }
@@ -117,8 +116,8 @@ export default class VexflowConverter {
       if (!model.suffix){
         throw new Error("Tuplet does not have initialized suffix")
       }
-      let suffixString = this.durationToString(model.suffix)
-      let suffix = this.durationStringToGlyph(suffixString);
+      // const suffixString = this.durationToString(model.suffix)
+      // const suffix = this.durationStringToGlyph(suffixString);
       // need at least vexflow 5.1.0 to add suffix to tuplets
       tuplet = this.factory.Tuplet({notes: childNotes, options: {numNotes: model.numNotes, notesOccupied: model.notesOccupied, ratioed: true, bracketed: true}})
     } else { 
@@ -144,7 +143,7 @@ export default class VexflowConverter {
     dots = 0,
     engineID = "",
     beamID: string | null): StemmableNote {
-    let durationString = this.durationToString(duration);
+    const durationString = this.durationToString(duration);
     
     const noteString = isRest
         ? `${durationString}r`
@@ -259,21 +258,21 @@ export default class VexflowConverter {
    */
   private generateTies(engineID: string){
 
-    let renderedIDs = this.engineToRenderNotes[engineID]
+    const renderedIDs = this.engineToRenderNotes[engineID]
 
     if (!renderedIDs || renderedIDs.length === 0) {
       return;
     }
 
-    let tieSet: Set<string> = new Set()
+    const tieSet = new Set<string>()
 
     for (let i = 0; i < renderedIDs.length - 1; i++){
-      let currentID = renderedIDs[i]
-      let nextID = renderedIDs[i + 1]
+      const currentID = renderedIDs[i]
+      const nextID = renderedIDs[i + 1]
 
 
-      let currentElement = this.registry.getElementById(currentID) as StemmableNote
-      let nextElement = this.registry.getElementById(nextID) as StemmableNote      
+      const currentElement = this.registry.getElementById(currentID) as StemmableNote
+      const nextElement = this.registry.getElementById(nextID) as StemmableNote      
 
       if (!currentElement || !nextElement) {
         console.warn(`Could not find elements for tie: ${currentID} or ${nextID}`);
@@ -291,7 +290,7 @@ export default class VexflowConverter {
       continue;
     }
     
-      let tie = this.factory.StaveTie({from: currentElement, to: nextElement})
+      const tie = this.factory.StaveTie({from: currentElement, to: nextElement})
       tieSet.add(tie.getAttribute("id"))
       }
     }
@@ -304,12 +303,12 @@ export default class VexflowConverter {
     // this.engineToRenderNotes[engineID] = newNoteChildren
 
     // add new tie children to map
-    let newTieChildren = [...tieSet]
+    const newTieChildren = [...tieSet]
     if (newTieChildren.length == 0){
       return
     }
 
-    for (let childID of newTieChildren){
+    for (const childID of newTieChildren){
       this.generateTieMaps(engineID, childID)
     }
   }

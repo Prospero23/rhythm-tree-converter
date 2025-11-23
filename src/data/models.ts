@@ -6,7 +6,7 @@ export enum RhythmType {
   }
   
 
-export type Note = {
+export interface Note {
     id: string;
     kind: RhythmType.Note;
     duration: ValidDuration;
@@ -17,7 +17,7 @@ export type Note = {
     beamID: string | null
   }
 
-export type Tuplet = {
+export interface Tuplet {
     id: string
     kind: RhythmType.Tuplet;
     children: PreRenderModel[]
@@ -29,7 +29,7 @@ export type Tuplet = {
 
 export type PreRenderModel = Note | Tuplet
 
-export type RhythmNode = {
+export interface RhythmNode {
     id: string
     size: number
     children: RhythmNode[]
