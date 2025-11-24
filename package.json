@@ -1,9 +1,8 @@
 {
   "name": "@orhythmic/rhythm-tree-converter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Converts rhythms represented as trees to a format that can be rendered by Vexflow",
-
   "main": "dist/index.js",
   "exports": {
     ".": {
@@ -12,18 +11,17 @@
     }
   },
   "types": "dist/index.d.ts",
-  "files": ["dist"],
-
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
     "lint": "eslint .",
     "test": "echo \"No tests yet\" && exit 0"
   },
-
   "author": "Ben Eidson",
   "license": "MIT",
-
   "peerDependencies": {
     "vexflow": "^5.0.0"
   },
