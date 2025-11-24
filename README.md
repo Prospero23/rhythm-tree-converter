@@ -13,30 +13,34 @@ npm install vexflow @orhythmic/rhythm-tree-converter
 ## How to Use
 Below is a basic flow for the conversion process. For more complex rendering help, see [the VexFlow wiki](https://github.com/0xfe/vexflow/wiki).
 ```js
-import { treeToVexflow } from "@orhythmic/rhythm-tree-converter";
-import { Factory } from "vexflow";
+import { treeToVexflow } from '@orhythmic/rhythm-tree-converter'
+import { VexFlow, Factory } from "vexflow";
 
-const factory = new Factory({renderer: {elementId: "output", width: 500, height: 200}});
-const meter = [4,4];
+VexFlow.loadFonts('Bravura').then(() => {
+    VexFlow.setFonts('Bravura')
 
-const rootNode = {
-    id: "0",
-    size: 1,
-    children: [],
-    isRest: false,
-    isAccented: false,
-    beamID: null
-}
+    const factory = new Factory({renderer: {elementId: "output", width: 500, height: 200}});
+    const meter: [number, number] = [4,4];
 
-const {notes, validMeterString} = treeToVexflow(factory, rootNode, meter)
+    const rootNode = {
+        id: "0",
+        size: 1,
+        children: [],
+        isRest: false,
+        isAccented: false,
+        beamID: null
+    }
 
-const voice = factory.Voice({time: validMeterString})
-voice.addTickables(notes);
+    const {notes, validMeterString} = treeToVexflow(factory, rootNode, meter)
 
-const system = factory.System({width: 500});
-system.addStave({ voices: [voice] });
+    const voice = factory.Voice({time: validMeterString})
+    voice.addTickables(notes);
 
-factory.draw()
+    const system = factory.System({width: 500});
+    system.addStave({ voices: [voice] });
+
+    factory.draw()
+})
 ```
 
 ## What conversion returns
