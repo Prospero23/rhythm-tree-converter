@@ -1,16 +1,31 @@
 import { type RhythmNode, type Note, type Tuplet, type PreRenderModel, RhythmType, type ValidDuration } from "../data/models";
 import Fraction from "../helpers/fraction";
 
-const MAX_TIED = 3
+interface PreRenderConverterOptions{
+    maxTied?: number;
+}
+
+interface PreRenderConverterSettings{
+    maxTied: number;
+}
+
+const defaultSettings: PreRenderConverterSettings = {
+    maxTied: 3,
+}
 
 export default class PreRenderConverter {        
     validDurations: ValidDuration[] = [1, 2, 4, 8, 16, 32, 64, 128, 256];
+    settings: PreRenderConverterSettings;
+
+    constructor(settings: PreRenderConverterOptions = {}){
+        this.settings = {...defaultSettings, ...settings}
+    }
 
     /**
-     * Public method to convert a rhythm tree generated in swift to prerendering json model
-     * @param meter Meter of the given bar.
+     * Public method to convert a rhythm tree to PreRenderModel
+     * @param meter Meter of the given bar
      * @param rootNode Root of the rhythm tree
-     * @returns Array containing elements that are to be passed to the VexflowConverter for rendering
+     * @returns Array containing elements that are to be passed to the VexflowConverter
      */
     convertTreeToPreRender(meter: Fraction, rootNode: RhythmNode): PreRenderModel[]{
         // simplifies denominator down to 4, 8, 16, 32 etc
@@ -18,7 +33,6 @@ export default class PreRenderConverter {
        const adjustedMeter = new Fraction(meter.numerator, adjustedDenom)
         const nodes = this.convertNode(rootNode, adjustedMeter)
         this.addSuffix(nodes);
-        // this.beamSequence(nodes)
         return nodes
     }
 
@@ -37,27 +51,26 @@ export default class PreRenderConverter {
         }
         
         const childrenSize = getChildrenTotalSize(node.children);
-        //gives the size of what a single child of the node should be
+        //gives child unit size
         const childDuration = containingSpace.divide(childrenSize).reduce();
 
         // checks numerator to make sure that 50 tied notes do not happen and it stays managable looking
-        // TODO: also add check that 
-        if (this.isValidDuration(childDuration.denominator) && childDuration.numerator <= MAX_TIED){ // add second check here 
+        if (this.isValidDuration(childDuration.denominator) && childDuration.numerator <= this.settings.maxTied){
            return this.convertNodeArray(node.children, childDuration)
         }
                
         return [this.convertToTuplet(node, containingSpace)]
-
     }
 
 /**
- * 
- * @param nodeToConvert Node that has no children
- * @param containingSpace Same as in convertNode. Functions as length. numerator: how many of 1/denom.
- * @returns 
+ * Converts nodes with no children to a single note if possible. If not, creates multiple notes
+ * that are tied.
+ * @param node Node that has no children
+ * @param containingSpace Same as in convertNode. Functions as length. numerator: how many of 1/denom
+ * @returns Notes for a given node. Multiple notes = notes that are tied to equal the node length
  */
-    private convertToNote(nodeToConvert: RhythmNode, containingSpace: Fraction): Note[]{
-        if (nodeToConvert.children.length > 0){
+    private convertToNote(node: RhythmNode, containingSpace: Fraction): Note[]{
+        if (node.children.length > 0){
             throw new Error("convert to node called on node that has children")
         }
 
@@ -68,47 +81,58 @@ export default class PreRenderConverter {
         }
 
         if (!this.isValidDuration(noteThatGetsValue)){
-            throw new Error(`tried to create note with duration 1/${noteThatGetsValue} for node ${nodeToConvert}`)
+            throw new Error(`tried to create note with duration 1/${noteThatGetsValue} for node ${node}`)
         }
 
-        //creates tied notes if notes are larger than 1. could add logic here later to simplify to a single node etc
+        // TODO: add logic here later to simplify to a single node etc
         if (containingSpace.numerator > 1){
-            return this.createTiedNote(nodeToConvert.id, containingSpace.numerator, noteThatGetsValue, nodeToConvert.isRest, nodeToConvert.isAccented, nodeToConvert.beamID)
+            return this.createTiedNote(node, containingSpace.numerator, noteThatGetsValue)
         }
-        return [{id: nodeToConvert.id, kind:RhythmType.Note, duration: noteThatGetsValue, isRest: nodeToConvert.isRest, isAccented: nodeToConvert.isAccented, beamID: nodeToConvert.beamID}]
+        return [{id: node.id, kind:RhythmType.Note, duration: noteThatGetsValue, isRest: node.isRest, isAccented: node.isAccented, beamID: node.beamID}]
 
         }
     
-    // helper function for convertToNote TODO: fix rest stuff in this
-    private createTiedNote(id:string, size: number, durationValue: ValidDuration, isRest: boolean, isAccented: boolean, beamID: string | null): Note[]{
+    /**
+     * Handles creation of tied notes for nodes
+     * @param node node to convert
+     * @param size how many tied notes are needed
+     * @param durationValue denominator of single unit (1, 2, 4, 8, etc.)
+     * @returns tied notes
+     */
+    private createTiedNote(node: RhythmNode, size: number, durationValue: ValidDuration): Note[]{
         const tiedNotes: Note[] = []
 
-        if (isRest){
-            // make all the notes but don't need to worry about tieiinging
+        if (node.isRest){
+            // no need to tie notes if node is a rest. Just make proper number of notes
             for (let i = 0; i < size; i++){
-                const newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, isRest: true, beamID}
+                const newNote: Note = {id: node.id, kind: RhythmType.Note, duration: durationValue, isTied: false, isRest: true, beamID: node.beamID}
                 tiedNotes.push(newNote) 
             }
             return tiedNotes
         }
-        // beam all notes to next except the last if is not a rest
+        // If node is not a rest, beam all notes to next except the last
         for (let i = 0; i < size - 1; i++){
             // mark the first note as accented if needed
-            if (i == 0 && isAccented == true){
-                const newAccentedNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, isAccented: true, beamID}
+            if (i == 0 && node.isAccented == true){
+                const newAccentedNote: Note = {id: node.id, kind: RhythmType.Note, duration: durationValue, isTied: true, isAccented: true, beamID: node.beamID}
                 tiedNotes.push(newAccentedNote)
             } else {
-                const newNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: true, beamID}
+                const newNote: Note = {id: node.id, kind: RhythmType.Note, duration: durationValue, isTied: true, beamID: node.beamID}
                 tiedNotes.push(newNote)    
             }
         }
-        // add no tie on the last note
-        const lastNote: Note = {id, kind: RhythmType.Note, duration: durationValue, isTied: false, beamID}
+        // add non-tied last note
+        const lastNote: Note = {id: node.id, kind: RhythmType.Note, duration: durationValue, isTied: false, beamID: node.beamID}
         tiedNotes.push(lastNote)
         return tiedNotes
-
     }
 
+    /**
+     * The name gives it away
+     * @param nodes array of nodes to convert
+     * @param childDuration duration of a single child
+     * @returns converted array of nodes
+     */
     private convertNodeArray(nodes: RhythmNode[], childDuration: Fraction){
         const children: PreRenderModel[] = []
         for (const node of nodes){ 
@@ -121,8 +145,12 @@ export default class PreRenderConverter {
         return children.flat()
     }
 
-    // there should be some control potentially here for people to be able to chose how they want it notated
-    // example: change from 3:4 quarters to 3:8 eighths -> 3:16 sixteenths etc. 
+    /**
+     * Pretty self explanitory. Converts a node to a tuplet
+     * @param node node to convert to Tuplet
+     * @param containingSpace space tuplet is contained within (see other methods for better definition)
+     * @returns converted Tuplet
+     */
     private convertToTuplet(node: RhythmNode, containingSpace: Fraction): Tuplet{
         // number children
         const numNotes = getChildrenTotalSize(node.children);
@@ -136,10 +164,10 @@ export default class PreRenderConverter {
         return {id: node.id, kind: RhythmType.Tuplet, children: [...children], numNotes: numNotes, notesOccupied: notesOccupied}
     }
 
-    private isValidDuration(duration: number): duration is ValidDuration {
-        return this.validDurations.includes(duration as ValidDuration);
-      }
-
+    /**
+     * Not super useful at the moment until VexFlow is bumped to 5.1.0. Allows for knowing what suffix should be used for tuplets
+     * @param models children of tuplet for calculations
+     */
     private addSuffix(models: PreRenderModel[]) {
         for (const model of models) {
             if (model.kind !== RhythmType.Tuplet) continue;
@@ -172,7 +200,6 @@ export default class PreRenderConverter {
             }
             }
 
-            // improper size? this may be enough
             const unitSize = totalDuration.divide(model.numNotes).reduce();
 
             if (unitSize.numerator !== 1) {
@@ -183,6 +210,13 @@ export default class PreRenderConverter {
         }
     }
 
+    /**
+     * Public helper function for converting denominators to durations that can be
+     * easily rendered. The break points were decided by looking at various scores, 
+     * talking to musicians, and the writer's judgement
+     * @param denominator denominator to convert. Can be any number
+     * @returns A proper valid duration
+     */
     convertDenominatorToValidDuration(denominator: number): ValidDuration{
         // whole note
         if(denominator == 1){
@@ -212,17 +246,21 @@ export default class PreRenderConverter {
         if (denominator >= 55 && denominator < 115){
             return 64
         }
-        // 128
+        // 128th
         if (denominator >= 115 && denominator < 240){
             return 128
         } 
         else {
+            // 256th
             return 256
         }
     }
+
+    private isValidDuration(duration: number): duration is ValidDuration {
+        return this.validDurations.includes(duration as ValidDuration);
+      }
 }
 
-// for the moment just use uuid whenever making a new note
 function getChildrenTotalSize(children: RhythmNode[]): number{
     const lengths = children.map((node) => node.size)
     const sum = lengths.reduce((partialSum, a) => partialSum + a, 0)
